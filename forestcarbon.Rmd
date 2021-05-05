@@ -39,7 +39,7 @@ library(sensitivity)
 
 ```{r}
 # start with sobel
-source("../R/dexcarbon_play.R")
+source(R/dexcarbon_play.R)
 
 # knowing the initial carbon
 
