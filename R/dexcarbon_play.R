@@ -14,8 +14,7 @@ dexcarbon_play = function(time, C, parms) {
   
   # set rate of change to g if C is at or above threshold canopy closure
   dexcarbon = ifelse(C >= parms$cc, g, dexcarbon)
-  return(list(dexcarbon))
-  
+
   # set rate of change to 0 once carrying capacity (K) is reached
   dexcarbon = ifelse(C > parms$K, 0, dexcarbon)
   return(list(dexcarbon))
