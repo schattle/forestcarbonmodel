@@ -1,6 +1,6 @@
 ---
 title: "Forest Carbon Model"
-author: "Lizzy Schattle, Rich Viebrock, & Haley Grant"
+author: "Lizzy Schattle, Rich Viebrock, Haley Grant, & Pat Byrne"
 date: "5/5/2021"
 output: html_document
 ---
