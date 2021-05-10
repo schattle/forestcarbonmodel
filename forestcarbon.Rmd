@@ -155,4 +155,25 @@ tmp = allres %>% gather(key="metric", value="value")
 ggplot(tmp, aes(metric, value, col=metric))+geom_boxplot()
 ```
 
+```{r}
+# since sobol can only do one at a time, we'll run the outputs separately for max and mean
+
+# max plot
+sens_c_maxC = sensitivity::tell(sens_C, allres$maxC)
+
+# 1st order (no co-variance)
+sens_c_maxC$S
+# total
+sens_c_maxC$T
+plot(sens_c_maxC)
+
+# mean plot
+sens_c_meanC = sensitivity::tell(sens_C, allres$meanC)
+# 1st order (no co-variance)
+sens_c_meanC$S
+# total
+sens_c_meanC$T
+plot(sens_c_meanC)
+
+```
 
