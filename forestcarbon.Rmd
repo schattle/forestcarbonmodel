@@ -125,15 +125,46 @@ ggplot(result, aes(time, C))+geom_point()
 
 ```{r }
 # Extract metrics of interest from illustrative example
-# Maximum carbon - again, above K which is not allowed
+# Maximum carbon 
 maxC = max(result$C)
 maxC
-
 # Mean carbon
 meanC = mean(result$C)
 meanC
 
+# Defining a function to do this automatically
+compute_metrics = function(result) {
+  maxC = max(result$C)
+  meanC = mean(result$C)
+return(list(maxC=maxC, meanC=meanC))}
 
+# Try it on our first parameter set to make sure it matches - looks good to me
+compute_metrics(result)
+```
+
+```{r}
+# Define a wrapper function to do everything we need - run solver and compute metrics - and send back results for each parameter
+c_wrapper = function(r, g, cc, K, Cinitial, simtimes, func) {
+    parms = list(r=r, g=g, cc=cc, K=K)
+    result = ode(y=Cinitial, times=simtimes, func=func, parms=parms) 
+    colnames(result)=c("time","C")
+  # get metrics
+  metrics=compute_metrics(as.data.frame(result))
+  return(metrics)
+}
+```
+
+```{r}
+# Use pmap to get results for all sets of sample parameters contained within sens_C
+
+allresults = sens_C$X %>% pmap(c_wrapper, Cinitial=Cinitial, simtimes=simtimes, func=dexcarbon_play)
+
+# Extract out results from pmap into a data frame
+allres = allresults %>% map_dfr(`[`,c("maxC","meanC"))
+
+# Create boxplots
+tmp = allres %>% gather(key="metric", value="value")
+ggplot(tmp, aes(metric, value, col=metric))+geom_boxplot()
 ```
 
 
