@@ -10,8 +10,7 @@
 dexcarbon_play = function(time, C, parms) {
   
   # compute rate of change of forest size when C is below canopy closure threshold
-  dexcarbon = ifelse(C < parms$c, parms$r*C, dexcarbon)
-  return(list(dexcarbon))
+  dexcarbon = parms$r*C
   
   # set rate of change to g if C is at or above threshold canopy closure
   dexcarbon = ifelse(C >= parms$c, g, dexcarbon)
