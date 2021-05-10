@@ -9,11 +9,25 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+# packages
+library(tidyverse)
+library(deSolve)
+library(sensitivity)
+```
+
 Instructions
 
 1. Implement this model in R (as a differential equation)
 
-2. Run the model for 300 years (using the ODE solver)  starting with an initial forest size of 10 kg/C, and using the following parameters
+```{r part 1. implement model}
+
+source("R/dexcarbon_play.R")
+
+```
+
+
+2. Run the model for 300 years (using the ODE solver) starting with an initial forest size of 10 kg/C, and using the following parameters
 
  canopy closure threshold of 50 kgC 
  K = 250 kg C (carrying capacity) 
@@ -21,6 +35,23 @@ Instructions
  g = 2 kg/year (linear growth rate after canopy closure)
 
 Graph the results
+
+```{r part 2. run the model using ODE solver}
+
+# set the parameters
+
+T = 300
+C = 10
+c = 50
+r = 0.01
+K = 250
+g = 2
+
+pcompare = list(c=c, r=r, K=K, g=g)
+
+dexcarbon_play(time = T, C = C, parms = pcompare)
+
+```
 
 3. Run a sobol sensitivity analysis that explores how the estimated maximum and mean forest size (e.g maximum and mean values of C over the 300 years) varies with the pre canopy closure growth rate (r) and post-canopy closure growth rate (g) and canopy closure threshold and carrying capacity(K)
 
@@ -30,20 +61,8 @@ Graph the results of the sensitivity analysis as a box plot of maximum forest si
 
 Submit R markdown with model implementation, graphs and sensitivity analysis and R file with your model
 
-```{r}
-# packages
-library(tidyverse)
-library(deSolve)
-library(sensitivity)
-```
 
-```{r}
-# start with sobel
-source(R/dexcarbon_play.R)
-
-# knowing the initial carbon
-
-Cinitial = 10
+```{r part 3. sobel sensitivity analysis}
 
 ```
 
