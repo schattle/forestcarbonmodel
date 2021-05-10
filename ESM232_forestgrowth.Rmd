@@ -1,7 +1,7 @@
 ---
 title: "Forest Carbon Model"
 author: "Lizzy Schattle, Rich Viebrock, Haley Grant, & Pat Byrne"
-date: "5/5/2021"
+date: "5/10/2021"
 output: html_document
 ---
 
@@ -36,7 +36,7 @@ source("R/dexcarbon_play.R")
 
 # set the parameters
 
-T = 300
+tt = 300
 C = 10
 cc = 50
 r = 0.01
@@ -45,13 +45,11 @@ g = 2
 
 pcompare = list(cc=cc, r=r, K=K, g=g)
 
-dexcarbon_play(time = T, C = C, parms = pcompare)
+dexcarbon_play(time = tt, C = C, parms = pcompare)
 
 growth_result = data.frame(time=seq(from=1,to=300))
 
 carbon_result = ode(C, growth_result$time, dexcarbon_play, pcompare)
-
-head(carbon_result)
 ```
 
 3. Run a sobol sensitivity analysis that explores how the estimated maximum and mean forest size (e.g maximum and mean values of C over the 300 years) varies with the pre canopy closure growth rate (r) and post-canopy closure growth rate (g) and canopy closure threshold and carrying capacity (K)
@@ -59,12 +57,11 @@ head(carbon_result)
 - Assume that they are all normally distributed with means as given above and standard deviation of 10% of mean value
 
 ```{r part 3. sobel sensitivity analysis}
-Cinitial=10
-
 # Sensitivity to pre canopy closure growth rate (r), post-canopy closure growth rate (g), canopy closure threshold (cc) and carrying capacity (K)
 
-# Set the number of parameters
+# Set the number of parameters and initial size/carbon
 np=100
+Cinitial=10
 
 # First set of samples
 r = rnorm(mean=0.01, sd=0.001, n=np)
@@ -84,49 +81,8 @@ X2 = cbind.data.frame(r=r, g=g, cc=cc, K=K)
 
 # Create sobel object to get sets of parameters for running the model
 sens_C = soboljansen(model = NULL,X1, X2, nboot = 300)
-
-# Check parameter sets 
-head(sens_C$X)
 ```
 
-```{r }
-# First set of parameters - going to run with these first to check that we've correctly modified her in-class code
-sens_C$X[1,]
-```
-
-```{r }
-# Repeating in-class illustrative code to make sure stuff works
-
-# Gets results for 300 years (evaluating every year)
-simtimes = seq(from=1, to=300)
-parms = list(r=sens_C$X$r[1], g=sens_C$X$g[1], cc=sens_C$X$cc[1], K=sens_C$X$K[1])
-result = ode(y=Cinitial, times=simtimes, func=dexcarbon_play, parms=parms)
-colnames(result)=c("time","C")
-result = as.data.frame(result)
-head(result)
-
-# Graph looks good enough to me 
-ggplot(result, aes(time, C))+geom_point()
-```
-
-```{r }
-# Extract metrics of interest from illustrative example
-# Maximum carbon 
-maxC = max(result$C)
-maxC
-# Mean carbon
-meanC = mean(result$C)
-meanC
-
-# Defining a function to do this automatically
-compute_metrics = function(result) {
-  maxC = max(result$C)
-  meanC = mean(result$C)
-return(list(maxC=maxC, meanC=meanC))}
-
-# Try it on our first parameter set to make sure it matches - looks good to me
-compute_metrics(result)
-```
 
 ```{r}
 # Define a wrapper function to do everything we need - run solver and compute metrics - and send back results for each parameter
@@ -138,13 +94,20 @@ c_wrapper = function(r, g, cc, K, Cinitial, simtimes, func) {
   metrics=compute_metrics(as.data.frame(result))
   return(metrics)
 }
+
+# Defining a function to extract metrics of interest
+compute_metrics = function(result) {
+  maxC = max(result$C)
+  meanC = mean(result$C)
+return(list(maxC=maxC, meanC=meanC))}
 ```
 
 - Graph the results of the sensitivity analysis as a box plot of maximum forest size and a plot of the two sobol indices (S and T)
 
-```{r}
-# Use pmap to get results for all sets of sample parameters contained within sens_C
+```{r, warnings=FALSE, message=FALSE, results='hide'}
+simtimes = seq(from=1, to=300)
 
+# Use pmap to get results for all sets of sample parameters contained within sens_C
 allresults = sens_C$X %>% pmap(c_wrapper, Cinitial=Cinitial, simtimes=simtimes, func=dexcarbon_play)
 
 # Extract out results from pmap into a data frame
@@ -152,29 +115,37 @@ allres = allresults %>% map_dfr(`[`,c("maxC","meanC"))
 
 # Create boxplots
 tmp = allres %>% gather(key="metric", value="value")
-ggplot(tmp, aes(metric, value, col=metric))+
+ggplot(tmp, aes(metric, value))+
   geom_boxplot()+
-  labs()
+  labs(x = 'Metric',
+       y = 'Forest Size as Carbon Content (kg C)',
+       title = 'Sensitivity Analysis: Maximum and Mean Forest Size')
 ```
 
 ```{r}
-# Compute sobol sensitivity for maximum forest C
+# Compute sobol sensitivity indices for maximum forest C
 sens_c_maxC = sensitivity::tell(sens_C, allres$maxC)
 
-# 1st order (no co-variance)
-sens_c_maxC$S
-# total
-sens_c_maxC$T
-# Plot 
+# 1st order (no co-variance) - uncomment below to display
+#sens_c_maxC$S
+
+# Total - uncomment below to display
+#sens_c_maxC$T
+
+# Plot indices
 plot(sens_c_maxC)
 
-# Compute sobol sensitivity for mean forest C
+
+# Compute sobol sensitivity indices for mean forest C
 sens_c_meanC = sensitivity::tell(sens_C, allres$meanC)
-# 1st order (no co-variance)
-sens_c_meanC$S
-# total
-sens_c_meanC$T
-# Plot
+
+# 1st order (no co-variance) - uncomment below to display
+#sens_c_meanC$S
+
+# Total - uncomment below to display
+#sens_c_meanC$T
+
+# Plot indices
 plot(sens_c_meanC)
 
 ```
