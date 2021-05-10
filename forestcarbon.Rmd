@@ -42,12 +42,12 @@ Graph the results
 
 T = 300
 C = 10
-c = 50
+cc = 50
 r = 0.01
 K = 250
 g = 2
 
-pcompare = list(c=c, r=r, K=K, g=g)
+pcompare = list(cc=cc, r=r, K=K, g=g)
 
 dexcarbon_play(time = T, C = C, parms = pcompare)
 
@@ -70,4 +70,71 @@ Submit R markdown with model implementation, graphs and sensitivity analysis and
 ```{r part 3. sobel sensitivity analysis}
 
 ```
+
+
+```{r sen}
+source("../R/dexppop_play.R")
+
+# lets start with sobel 
+library(sensitivity)
+
+# come up with first set of sample parameters
+# we will assume that we know the initial population,
+
+Pinitial=10
+
+# want to learn about sensitivity to growth rate (r) and carrying capacity (K)
+# set the number of parameters
+np=100
+K = rnorm(mean=400, sd=10, n=np)
+r = rnorm(mean=0.02, sd=0.005, n=np)
+X1 = cbind.data.frame(r=r, K=K)
+
+# repeat to get our second set of samples
+K = rnorm(mean=400, sd=20, n=np)
+r = rnorm(mean=0.02, sd=0.005, n=np)
+X2 = cbind.data.frame(r=r, K=K)
+
+# create our sobel object and get sets ofparameters for running the model
+
+sens_P = soboljansen(model = NULL,X1, X2, nboot = 300)
+
+# our parameter sets are
+head(sens_P$X)
+
+# run our differential equation and keep the output
+# BUT
+# what output do we want  to keep
+# how about maximum population if we run the model for 200 years, and how many years to get to the carrying capacity
+
+# for illustration lets look at running just one parameter sets and summarizing results
+sens_P$X[1,]
+# recall ODE needs ALL of our parameters in a single list 
+# initial population and timnes for which we want output 
+Pinitial
+
+# gets results for 200 years (evaluating every year)
+simtimes = seq(from=1, to=200)
+parms = list(r=sens_P$X$r[1], K=sens_P$X$K[1])
+result = ode(y=Pinitial, times=simtimes, func=dexppop_play, parms=parms)
+
+head(result)
+colnames(result)=c("time","P")
+# turn it into a data frame
+result = as.data.frame(result)
+ggplot(result, aes(time, P))+geom_point()
+
+# extra our metrics of interest  from this
+# maximum population it gets to
+maxpop = max(result$P)
+maxpop
+
+# years required to get to the maximum poputation
+# which.max will tell us when max population occur
+idx = which.max(result$P)
+# turn this index into a year (might be the same if time step in 1 but just in case it isn't)
+maxyear = result$time[idx]
+maxyear
+```
+
 
